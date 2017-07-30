@@ -21,16 +21,28 @@ readme_directory = no
 # TLS parameters
 smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
 smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+{% if postfix_smtpd_use_tls %}
 smtpd_use_tls=yes
+smtpd_tls_security_level=may
+smtpd_tls_ask_ccert=yes
+smtpd_tls_loglevel=1
 smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+{% endif %}
+{% if postfix_smtp_use_tls %}
+smtp_tls_security_level=may
+smtp_tls_loglevel=1
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+{% endif %}
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 
 # See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
 # information on enabling SSL in the smtp client.
 
 myhostname = {{ postfix_hostname }}
+{% if postfix_aliases %}
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
+{% endif %}
 {% if postfix_virtual_aliases %}
 virtual_alias_maps = hash:/etc/postfix/virtual
 {% endif %}
@@ -67,3 +79,8 @@ message_size_limit = {{  postfix_message_size_limit }}
 
 # Disable the SMTP VRFY command. This stops some techniques used to harvest email addresses.
 disable_vrfy_command = {{ postfix_disable_vrfy_command | bool | ternary('yes', 'no') }}
+
+{% if postfix_enable_dkim %}
+# DKIM
+dkim_socket_port = inet:localhost:{{ dkim_socket_port }}
+{% endif %}
